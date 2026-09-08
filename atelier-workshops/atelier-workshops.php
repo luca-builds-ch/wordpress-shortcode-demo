@@ -22,7 +22,7 @@ function atelier_register_content(): void {
         'supports' => ['title', 'editor', 'excerpt'],
     ]);
     register_taxonomy('atelier_topic', 'atelier_workshop', [
-        'labels' => ['name' => 'Themen', 'singular_name' => 'Thema'],
+        'labels' => ['name' => 'Topics', 'singular_name' => 'Topic'],
         'public' => false,
         'show_ui' => true,
         'show_in_rest' => true,
@@ -74,7 +74,7 @@ function atelier_upcoming_workshops(string $topic = '', int $limit = 6): array {
 
 function atelier_render_workshops(array $posts): string {
     if (!$posts) {
-        return '<div class="schedule-empty" role="status"><span aria-hidden="true">↗</span><h3>Hier ist gerade Raum für Neues.</h3><p>Für dieses Thema gibt es aktuell keine kommenden Beispieltermine.</p></div>';
+        return '<div class="schedule-empty" role="status"><h3>No workshops scheduled</h3><p>There are no upcoming workshops for this topic.</p></div>';
     }
     $html = '<div class="workshop-grid">';
     foreach ($posts as $workshop) {
@@ -82,15 +82,16 @@ function atelier_render_workshops(array $posts): string {
         $terms = get_the_terms($workshop->ID, 'atelier_topic');
         $term = !is_wp_error($terms) && $terms ? reset($terms) : null;
         $topic = $term ? $term->slug : 'werkstatt';
-        $topic_name = $term ? $term->name : 'Werkstatt';
+        $topic_name = $term ? $term->name : 'Workshop';
         $fee = get_post_meta($workshop->ID, '_atelier_fee', true);
-        $price = $fee === '0' ? 'Kostenlos' : ($fee === '' ? 'Preis auf Anfrage' : 'CHF ' . number_format_i18n((float) $fee, 0));
+        $price = $fee === '0' ? 'Free' : ($fee === '' ? 'Price on request' : 'CHF ' . number_format_i18n((float) $fee, 0));
         $iso = wp_date('c', $start, wp_timezone());
         $html .= '<article class="workshop-card topic-' . esc_attr($topic) . '" data-workshop-id="' . $workshop->ID . '">';
-        $html .= '<div class="workshop-art" aria-hidden="true"><span class="art-ring"></span><span class="art-block"></span><span class="art-line"></span><span class="art-dot"></span></div>';
+        $art = apply_filters('atelier_workshop_art', '', $workshop, $topic);
+        $html .= '<div class="workshop-art">' . $art . '</div>';
         $html .= '<div class="workshop-body"><div class="card-meta"><span>' . esc_html($topic_name) . '</span><span>' . esc_html($price) . '</span></div>';
         $html .= '<h3>' . esc_html(get_the_title($workshop)) . '</h3><p>' . esc_html(get_the_excerpt($workshop)) . '</p>';
-        $html .= '<time datetime="' . esc_attr($iso) . '">' . esc_html(wp_date('d.m.Y · H:i', $start, wp_timezone())) . ' <span>' . esc_html(wp_date('T', $start, wp_timezone())) . '</span></time>';
+        $html .= '<time datetime="' . esc_attr($iso) . '">' . esc_html(wp_date('d M Y · H:i', $start, wp_timezone())) . ' <span>' . esc_html(wp_date('T', $start, wp_timezone())) . '</span></time>';
         $html .= '</div></article>';
     }
     return $html . '</div>';
@@ -103,15 +104,15 @@ function atelier_schedule_shortcode($attributes): string {
 }
 
 add_action('add_meta_boxes', function (): void {
-    add_meta_box('atelier-details', 'Termindetails', 'atelier_workshop_fields', 'atelier_workshop', 'normal');
+    add_meta_box('atelier-details', 'Workshop details', 'atelier_workshop_fields', 'atelier_workshop', 'normal');
 });
 function atelier_workshop_fields(WP_Post $post): void {
     wp_nonce_field('atelier_save_workshop', 'atelier_workshop_nonce');
     $timestamp = (int) get_post_meta($post->ID, '_atelier_start_utc', true);
     $local = $timestamp ? wp_date('Y-m-d\TH:i', $timestamp, wp_timezone()) : '';
-    echo '<p><label>Beginn (' . esc_html(wp_timezone_string()) . ')<br><input type="datetime-local" name="atelier_start" value="' . esc_attr($local) . '"></label></p>';
-    echo '<p class="description">Unveränderte Uhrzeiten behalten ihren gespeicherten Zeitpunkt. Bei einer neu eingegebenen doppelten Uhrzeit am Ende der Sommerzeit gilt das spätere Vorkommen. Nicht existierende Uhrzeiten beim Beginn der Sommerzeit werden nicht übernommen.</p>';
-    echo '<p><label>Preis in CHF, 0 für kostenlos<br><input type="number" name="atelier_fee" min="0" step="1" value="' . esc_attr(get_post_meta($post->ID, '_atelier_fee', true)) . '"></label></p>';
+    echo '<p><label>Start time (' . esc_html(wp_timezone_string()) . ')<br><input type="datetime-local" name="atelier_start" value="' . esc_attr($local) . '"></label></p>';
+    echo '<p class="description">Unchanged local times preserve the saved instant. A new ambiguous time at the end of daylight saving selects the later occurrence. Nonexistent times during the spring transition are not saved.</p>';
+    echo '<p><label>Fee in CHF, 0 for free<br><input type="number" name="atelier_fee" min="0" step="1" value="' . esc_attr(get_post_meta($post->ID, '_atelier_fee', true)) . '"></label></p>';
 }
 /** Parse a new wall time, choosing the later instant during a DST overlap. */
 function atelier_parse_local_start(string $input): ?int {
