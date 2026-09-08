@@ -6,9 +6,9 @@ Atelier Nord is an independent portfolio exercise with fictional events, fees an
 
 ## Views
 
-![Desktop view](wordpress-demo-desktop.png)
+![Desktop view](wordpress-demo-desktop.png?revision=photos-20260908)
 
-![Workshop schedule](wordpress-demo-gallery.png)
+![Workshop schedule](wordpress-demo-gallery.png?revision=photos-20260908)
 
 [Mobile view](wordpress-demo-mobile.png)
 
