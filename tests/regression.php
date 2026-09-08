@@ -113,7 +113,7 @@ try {
         same(ids(atelier_demo_legacy_workshops()), [], 'The deliberately faulty fixture must reproduce the loss');
         $html = do_shortcode('[atelier_schedule]');
         same(str_contains($html, '12:30'), true, 'Display uses WordPress site timezone');
-        same(str_contains($html, 'Kostenlos'), true, 'Zero fee is not an empty value');
+        same(str_contains($html, 'Free'), true, 'Zero fee is not an empty value');
         clear_fixtures();
     });
     check('New York: past event stays excluded in a negative-offset timezone', function () use (&$clock): void {
@@ -171,7 +171,7 @@ try {
             editor_save($id, '2030-07-01T12:30');
             same((int) get_post_meta($id, '_atelier_start_utc', true), (new DateTimeImmutable('2030-07-01T10:30:00Z'))->getTimestamp(), 'Editor stores the real UTC instant');
             same(str_contains(do_shortcode('[atelier_schedule]'), '12:30'), true, 'Editor value round-trips in site timezone');
-            same(str_contains(do_shortcode('[atelier_schedule]'), 'Kostenlos'), true, 'Editor zero price remains meaningful');
+            same(str_contains(do_shortcode('[atelier_schedule]'), 'Free'), true, 'Editor zero price remains meaningful');
         } finally {
             clear_fixtures();
         }
